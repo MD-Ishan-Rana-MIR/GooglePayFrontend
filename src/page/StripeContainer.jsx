@@ -12,7 +12,7 @@ const StripeContainer = () => {
 
     useEffect(() => {
         axios
-            .post('http://localhost:5500/api/v1/create-payment-intent', {
+            .post('https://google-pay-backend-sandy.vercel.app/api/v1/create-payment-intent', {
                 amount: 500, // 5.00 USD in cents
                 currency: 'usd',
             })
