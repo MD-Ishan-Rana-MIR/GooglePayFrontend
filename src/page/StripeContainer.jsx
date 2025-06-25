@@ -17,6 +17,7 @@ const StripeContainer = () => {
                 currency: 'usd',
             })
             .then((res) => {
+                console.log(`response is ${res?.data}`)
                 setClientSecret(res.data.clientSecret);
             })
             .catch((err) => console.error('PaymentIntent error:', err));

@@ -6,6 +6,7 @@ import {
 } from '@stripe/react-stripe-js';
 
 const GooglePayButton = ({ clientSecret }) => {
+    console.log(`client secret is ${clientSecret}`)
     const stripe = useStripe();
     const elements = useElements();
     const [paymentRequest, setPaymentRequest] = useState(null);
@@ -23,7 +24,7 @@ const GooglePayButton = ({ clientSecret }) => {
             requestPayerName: true,
             requestPayerEmail: true,
         });
-
+        console.log(`pr is ${pr}`)
         pr.canMakePayment().then((result) => {
             console.log('canMakePayment:', result); // helpful for debugging
             if (result) {
@@ -31,7 +32,7 @@ const GooglePayButton = ({ clientSecret }) => {
             } else {
                 console.warn('Google Pay is not available on this device.');
             }
-        });
+        }).catch((err) => { console.log(` error is ${err} `) });
 
         pr.on('paymentmethod', async (ev) => {
             const { error } = await stripe.confirmCardPayment(
