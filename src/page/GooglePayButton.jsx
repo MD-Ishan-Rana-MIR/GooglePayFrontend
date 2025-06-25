@@ -5,7 +5,7 @@ import {
     useElements,
 } from '@stripe/react-stripe-js';
 
-const GooglePayButton = () => {
+const GooglePayButton = ({ clientSecret }) => {
     const stripe = useStripe();
     const elements = useElements();
     const [paymentRequest, setPaymentRequest] = useState(null);
@@ -18,22 +18,24 @@ const GooglePayButton = () => {
             currency: 'usd',
             total: {
                 label: 'Donation',
-                amount: 500, // 5.00 USD
+                amount: 500,
             },
             requestPayerName: true,
             requestPayerEmail: true,
         });
 
         pr.canMakePayment().then((result) => {
+            console.log('canMakePayment:', result); // helpful for debugging
             if (result) {
                 setPaymentRequest(pr);
+            } else {
+                console.warn('Google Pay is not available on this device.');
             }
         });
 
-        // Optional: Handle result
         pr.on('paymentmethod', async (ev) => {
             const { error } = await stripe.confirmCardPayment(
-                ev.paymentIntent.client_secret,
+                clientSecret,
                 {
                     payment_method: ev.paymentMethod.id,
                 },
@@ -42,27 +44,30 @@ const GooglePayButton = () => {
 
             if (error) {
                 ev.complete('fail');
-                console.error('Payment failed:', error);
+                console.error('Payment failed:', error.message);
+                alert('Payment failed: ' + error.message);
             } else {
                 ev.complete('success');
                 alert('Payment successful!');
             }
         });
-    }, [stripe]);
+    }, [stripe, clientSecret]);
 
     if (!paymentRequest) return null;
 
     return (
-        <PaymentRequestButtonElement
-            options={{ paymentRequest }}
-            style={{
-                paymentRequestButton: {
-                    theme: 'dark',
-                    height: '50px',
-                    type: 'buy',
-                },
-            }}
-        />
+        <div style={{ marginTop: '2rem' }}>
+            <PaymentRequestButtonElement
+                options={{ paymentRequest }}
+                style={{
+                    paymentRequestButton: {
+                        theme: 'dark',
+                        height: '50px',
+                        type: 'buy',
+                    },
+                }}
+            />
+        </div>
     );
 };
 

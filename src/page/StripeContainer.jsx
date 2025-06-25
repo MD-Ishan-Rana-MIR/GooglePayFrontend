@@ -4,42 +4,35 @@ import { loadStripe } from '@stripe/stripe-js';
 import axios from 'axios';
 import GooglePayButton from './GooglePayButton';
 
-const stripePromise = loadStripe('pk_test_51QVkpsGBxMAp0jzpOqaZL5i7NL6mzV14z72Z9896jHiSCmhzRd7RjoVoa0kmKvIbkA2M0Gp9kmjudDQXKHqK9U7e00MrQBs8AL');
+const stripePromise = loadStripe('pk_test_YOUR_PUBLIC_KEY'); // Replace with your publishable key
 
 const StripeContainer = () => {
     const [clientSecret, setClientSecret] = useState('');
+    console.log(clientSecret)
 
     useEffect(() => {
-        // Call your backend to create a PaymentIntent
         axios
-            .post('https://google-pay-backend-sandy.vercel.app/api/v1/create-payment-intent', {
+            .post('http://localhost:5500/api/v1/create-payment-intent', {
                 amount: 500, // 5.00 USD in cents
                 currency: 'usd',
             })
             .then((res) => {
-                console.log(res)
                 setClientSecret(res.data.clientSecret);
             })
-            .catch((err) => {
-                console.error('Error creating PaymentIntent:', err);
-            });
+            .catch((err) => console.error('PaymentIntent error:', err));
     }, []);
-
-    const appearance = {
-        theme: 'flat',
-    };
 
     const options = {
         clientSecret,
-        appearance,
+        appearance: { theme: 'flat' },
     };
 
     return clientSecret ? (
         <Elements stripe={stripePromise} options={options}>
-            <GooglePayButton />
+            <GooglePayButton clientSecret={clientSecret} />
         </Elements>
     ) : (
-        <p>Loading payment...</p>
+        <p>Loading payment form...</p>
     );
 };
 
