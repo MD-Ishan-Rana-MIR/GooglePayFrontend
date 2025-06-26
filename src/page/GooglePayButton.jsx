@@ -1,74 +1,84 @@
+// GooglePayButton.jsx
 import React, { useEffect, useState } from 'react';
 import {
     PaymentRequestButtonElement,
     useStripe,
     useElements,
 } from '@stripe/react-stripe-js';
+import axios from 'axios';
 
-const GooglePayButton = ({ clientSecret }) => {
-    console.log(`client secret is ${clientSecret}`)
+const GooglePayButton = () => {
     const stripe = useStripe();
     const elements = useElements();
     const [paymentRequest, setPaymentRequest] = useState(null);
 
     useEffect(() => {
-        if (!stripe) return;
+        const initPayment = async () => {
+            if (!stripe || !elements) return;
 
-        const pr = stripe.paymentRequest({
-            country: 'US',
-            currency: 'usd',
-            total: {
-                label: 'Donation',
+            // Get clientSecret from your backend
+            const res = await axios.post('https://google-pay-backend-sandy.vercel.app/api/v1/create-payment-intent', {
                 amount: 500,
-            },
-            requestPayerName: true,
-            requestPayerEmail: true,
-        });
-        console.log(`pr is ${pr}`)
-        pr.canMakePayment().then((result) => {
-            console.log('canMakePayment:', result); // helpful for debugging
+                currency: 'usd',
+            });
+
+            const clientSecret = res.data.clientSecret;
+
+            const pr = stripe.paymentRequest({
+                country: 'US',
+                currency: 'usd',
+                total: {
+                    label: 'Donation',
+                    amount: 500,
+                },
+                requestPayerName: true,
+                requestPayerEmail: true,
+            });
+
+            // Check if Google Pay is available
+            const result = await pr.canMakePayment();
+            console.log('canMakePayment result:', result);
+
             if (result) {
                 setPaymentRequest(pr);
+
+                pr.on('paymentmethod', async (ev) => {
+                    const { error } = await stripe.confirmCardPayment(
+                        clientSecret,
+                        { payment_method: ev.paymentMethod.id },
+                        { handleActions: false }
+                    );
+
+                    if (error) {
+                        ev.complete('fail');
+                        alert('Payment failed!');
+                        console.error(error);
+                    } else {
+                        ev.complete('success');
+                        alert('Payment successful!');
+                    }
+                });
             } else {
                 console.warn('Google Pay is not available on this device.');
             }
-        }).catch((err) => { console.log(` error is ${err} `) });
+        };
 
-        pr.on('paymentmethod', async (ev) => {
-            const { error } = await stripe.confirmCardPayment(
-                clientSecret,
-                {
-                    payment_method: ev.paymentMethod.id,
-                },
-                { handleActions: false }
-            );
-
-            if (error) {
-                ev.complete('fail');
-                console.error('Payment failed:', error.message);
-                alert('Payment failed: ' + error.message);
-            } else {
-                ev.complete('success');
-                alert('Payment successful!');
-            }
-        });
-    }, [stripe, clientSecret]);
+        initPayment();
+    }, [stripe, elements]);
 
     if (!paymentRequest) return null;
 
     return (
-        <div style={{ marginTop: '2rem' }}>
-            <PaymentRequestButtonElement
-                options={{ paymentRequest }}
-                style={{
-                    paymentRequestButton: {
-                        theme: 'dark',
-                        height: '50px',
-                        type: 'buy',
-                    },
-                }}
-            />
-        </div>
+        <PaymentRequestButtonElement
+            options={{ paymentRequest }}
+            style={{
+                paymentRequestButton: {
+                    theme: 'dark',
+                    height: '48px',
+                    type: 'buy',
+                },
+            }}
+        />
     );
 };
 
