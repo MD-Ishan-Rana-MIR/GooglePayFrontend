@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google-pay/button-react": "^3.1.0",
+    "@google-pay/button-react": "^2.0.0",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^7.4.0",
     "axios": "^1.10.0",
