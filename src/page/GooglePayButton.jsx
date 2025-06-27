@@ -16,14 +16,18 @@ const GooglePayButton = () => {
         const initPayment = async () => {
             if (!stripe || !elements) return;
 
-            // Get clientSecret from your backend
-            const res = await axios.post('https://google-pay-backend-sandy.vercel.app/api/v1/create-payment-intent', {
-                amount: 500,
-                currency: 'usd',
-            });
+            // 1. Get clientSecret from your backend
+            const res = await axios.post(
+                'https://google-pay-backend-sandy.vercel.app/api/v1/create-payment-intent',
+                {
+                    amount: 500,
+                    currency: 'usd',
+                }
+            );
 
             const clientSecret = res.data.clientSecret;
 
+            // 2. Create PaymentRequest with supportedMethods
             const pr = stripe.paymentRequest({
                 country: 'US',
                 currency: 'usd',
@@ -33,9 +37,14 @@ const GooglePayButton = () => {
                 },
                 requestPayerName: true,
                 requestPayerEmail: true,
+                supportedPaymentMethods: [
+                    {
+                        supportedMethods: 'card', // ✅ Required for Google Pay
+                    },
+                ],
             });
 
-            // Check if Google Pay is available
+            // 3. Check if Google Pay is available
             const result = await pr.canMakePayment();
             console.log('canMakePayment result:', result);
 
@@ -66,7 +75,7 @@ const GooglePayButton = () => {
         initPayment();
     }, [stripe, elements]);
 
-    if (!paymentRequest) return null;
+    if (!paymentRequest) return <p className="text-red-500">Google Pay is not available on this device.</p>;
 
     return (
         <PaymentRequestButtonElement
